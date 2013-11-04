@@ -6,9 +6,26 @@ import (
     "fmt"
 	"strconv"
 )
+
+// define new structure corresponding to each session
+type session struct {
+    // Registered connections.
+    connections [] net.Conn
+	// Corresponding names of registered connections
+	names [] string
+    // The session administrator
+	administrator string
+}
  
 const PORT = 8080
- 
+
+// define new structure corresponding to each session
+type server struct {
+	currentSession session
+}
+
+var newSession session
+
 func main() {
     server, _ := net.Listen("tcp", ":" + strconv.Itoa(PORT))
     if server == nil {
@@ -16,7 +33,7 @@ func main() {
     }
     conns := clientConns(server)
     for {
-        go handleConn(<-conns)
+        go handleConnection(<-conns)
     }
 }
  
@@ -29,22 +46,37 @@ func clientConns(listener net.Listener) chan net.Conn {
                 fmt.Printf("couldn't accept client connection")
                 continue
             }
-		buff := make([]byte, 512)
-		nr, err := client.Read(buff)
-        if err != nil {
-            return
-        }
-
-        messageFromClient := buff[0:nr]
-        fmt.Printf("Received: %v", string(messageFromClient))
             channel <- client
         }
     }()
     return channel
 }
  
-func handleConn(client net.Conn) {
+func handleConnection(client net.Conn) {
     b := bufio.NewReader(client)
+	//receive the user name
+	buff := make([]byte, 512)
+	clientNameb, _ := client.Read(buff)
+	clientName := string(buff[0:clientNameb])
+	
+	//check if the user wants to start new session or join existing
+	nr, _ := client.Read(buff)
+	messageFromClient := string(buff[0:nr][0])
+	clientOption, _:= strconv.Atoi(messageFromClient)
+	if clientOption == 1 {
+		//start a new session
+		fmt.Println(clientName + ", you choose to Start a new session")	
+		newSession = session {
+			connections: []net.Conn{client},
+			names : []string{clientName},
+			administrator:   clientName,
+		}
+	} else {
+		//join an existing session
+		fmt.Println(clientName + ", you choose to Join an existing session")
+		newSession.names = append(newSession.names, clientName)
+		newSession.connections = append(newSession.connections, client)
+	}
     for {
         line, err := b.ReadBytes('\n')
         if err != nil { // EOF, or worse
