@@ -53,7 +53,7 @@ func clientConns(listener net.Listener) chan net.Conn {
 }
  
 func handleConnection(client net.Conn) {
-    b := bufio.NewReader(client)
+    reader := bufio.NewReader(client)
 	//receive the user name
 	buff := make([]byte, 512)
 	clientNameb, _ := client.Read(buff)
@@ -78,10 +78,15 @@ func handleConnection(client net.Conn) {
 		newSession.connections = append(newSession.connections, client)
 	}
     for {
-        line, err := b.ReadBytes('\n')
+        line, err := reader.ReadBytes('\n')
         if err != nil { // EOF, or worse
             break
         }
-        client.Write(line)
+		//broadcast client message
+		message := clientName + ":" + string(line)
+		for _, currentClient := range newSession.connections {
+			currentClient.Write([]byte(message))
+		}
+        
     }
 }
