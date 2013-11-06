@@ -7,23 +7,23 @@ import (
 	"strconv"
 )
 
+//Constants
+const PORT = 8080
+
 // define new structure corresponding to each session
 type session struct {
     // Registered connections.
     connections [] net.Conn
 	// Corresponding names of registered connections
 	names [] string
-    // The session administrator
-	administrator string
 }
  
-const PORT = 8080
 
 // define new structure corresponding to each session
 type server struct {
 	currentSession session
 }
-
+//global variables
 var newSession session
 
 func main() {
@@ -31,6 +31,10 @@ func main() {
     if server == nil {
         panic("couldn't start listening....")
     }
+	newSession = session {
+			connections: []net.Conn{},
+			names : []string{},
+			}
     conns := clientConns(server)
     for {
         go handleConnection(<-conns)
@@ -58,25 +62,9 @@ func handleConnection(client net.Conn) {
 	buff := make([]byte, 512)
 	clientNameb, _ := client.Read(buff)
 	clientName := string(buff[0:clientNameb])
+	newSession.names = append(newSession.names, clientName)
+	newSession.connections = append(newSession.connections, client)
 	
-	//check if the user wants to start new session or join existing
-	nr, _ := client.Read(buff)
-	messageFromClient := string(buff[0:nr][0])
-	clientOption, _:= strconv.Atoi(messageFromClient)
-	if clientOption == 1 {
-		//start a new session
-		fmt.Println(clientName + ", you choose to Start a new session")	
-		newSession = session {
-			connections: []net.Conn{client},
-			names : []string{clientName},
-			administrator:   clientName,
-		}
-	} else {
-		//join an existing session
-		fmt.Println(clientName + ", you choose to Join an existing session")
-		newSession.names = append(newSession.names, clientName)
-		newSession.connections = append(newSession.connections, client)
-	}
     for {
         line, err := reader.ReadBytes('\n')
         if err != nil { // EOF, or worse
