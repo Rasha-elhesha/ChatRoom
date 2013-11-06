@@ -21,12 +21,8 @@ func main() {
 	name, _ , _:= inputReader.ReadLine()
 	userName := string(name)
     connection.Write([]byte(userName))
-		
-	//asks the user if want to join a session or want to new  one
-	fmt.Printf("What would you like to do?\n1.Start a new session.\n2.Join an existing one.\n")
-	option, _ := inputReader.ReadString('\n')
-    connection.Write([]byte(option))
 	
+	fmt.Printf("*****************Go Chat*****************\n")
 	//run the writer to read messages from console and send them to the server
 	go messageWriter(connection)
 	
