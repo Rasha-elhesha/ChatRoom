@@ -40,7 +40,11 @@ func main() {
         go handleConnection(<-conns)
     }
 }
- 
+
+/*
+ * This function is called by the main
+ * The function listen for client connections, accept them
+*/
 func clientConns(listener net.Listener) chan net.Conn {
     channel := make(chan net.Conn)
     go func() {
@@ -56,6 +60,10 @@ func clientConns(listener net.Listener) chan net.Conn {
     return channel
 }
  
+/*
+ * This function is called by the main to handle the chat functionality of new connection
+ * The function reads the user name and saves it, then waits for user messages and broadcast them
+*/
 func handleConnection(client net.Conn) {
     reader := bufio.NewReader(client)
 	//receive the user name
@@ -66,14 +74,17 @@ func handleConnection(client net.Conn) {
 	newSession.connections = append(newSession.connections, client)
 	
     for {
+		//receive the user message
         line, err := reader.ReadBytes('\n')
-        if err != nil { // EOF, or worse
+        if err != nil {
             break
         }
 		//broadcast client message
 		message := clientName + ":" + string(line)
 		for _, currentClient := range newSession.connections {
-			currentClient.Write([]byte(message))
+			if(currentClient != nil) {
+				currentClient.Write([]byte(message))
+			}
 		}
         
     }
